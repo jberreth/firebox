@@ -374,3 +374,179 @@ class GatewayService:
         ]
         
         return mock_gateways
+    
+    def ping_gateway(self, source_gateway: str, target_gateway: str) -> Dict:
+        """Test connectivity from one gateway to another"""
+        try:
+            logger.info("Testing gateway ping", source=source_gateway, target=target_gateway)
+            
+            # Get gateway configurations to find target info
+            target_info = self._get_gateway_config(target_gateway)
+            if not target_info:
+                return {
+                    'success': False,
+                    'error': f'Target gateway {target_gateway} not found',
+                    'source': source_gateway,
+                    'target': target_gateway
+                }
+            
+            # Test using Docker network connectivity
+            ping_result = self._test_docker_connectivity(source_gateway, target_gateway, target_info)
+            
+            return {
+                'success': ping_result['success'],
+                'source': source_gateway,
+                'target': target_gateway,
+                'target_host': target_info.get('hostname', target_gateway.lower()),
+                'target_port': target_info.get('http_port'),
+                'response_time': ping_result.get('response_time'),
+                'method': ping_result.get('method', 'docker_exec'),
+                'timestamp': datetime.utcnow().isoformat(),
+                'error': ping_result.get('error')
+            }
+            
+        except Exception as e:
+            logger.error("Failed to ping gateway", source=source_gateway, target=target_gateway, error=str(e))
+            return {
+                'success': False,
+                'error': str(e),
+                'source': source_gateway,
+                'target': target_gateway
+            }
+    
+    def test_all_connections(self) -> List[Dict]:
+        """Test all configured gateway-to-gateway connections"""
+        try:
+            connections = self._get_configured_connections()
+            results = []
+            
+            for connection in connections:
+                result = self.ping_gateway(connection['source'], connection['target'])
+                results.append(result)
+            
+            logger.info("Tested all gateway connections", total_tests=len(results))
+            return results
+            
+        except Exception as e:
+            logger.error("Failed to test all connections", error=str(e))
+            return []
+    
+    def _get_gateway_config(self, gateway_name: str) -> Optional[Dict]:
+        """Get gateway configuration from env files"""
+        try:
+            env_file_path = f"/opt/firebox/config/gateways/{gateway_name}.env"
+            
+            # Read the environment file
+            import os
+            if not os.path.exists(env_file_path):
+                logger.warning("Gateway config file not found", gateway=gateway_name, path=env_file_path)
+                return None
+            
+            config = {}
+            with open(env_file_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        config[key] = value
+            
+            # Extract relevant information
+            return {
+                'name': gateway_name,
+                'hostname': config.get('CONTAINER_HOSTNAME', gateway_name.lower()),
+                'http_port': config.get('HTTP_PORT'),
+                'service_name': config.get('SERVICE_NAME', gateway_name.lower())
+            }
+            
+        except Exception as e:
+            logger.error("Failed to get gateway config", gateway=gateway_name, error=str(e))
+            return None
+    
+    def _test_docker_connectivity(self, source_gateway: str, target_gateway: str, target_info: Dict) -> Dict:
+        """Test connectivity using Docker exec commands"""
+        try:
+            source_container = f"ignition-sandbox_{source_gateway.lower()}_1"
+            target_host = target_info.get('hostname', target_gateway.lower())
+            target_port = target_info.get('http_port', '8080')
+            
+            # Try different connectivity tests
+            start_time = time.time()
+            
+            # First try ping if available
+            ping_cmd = f"ping -c 1 -W 3 {target_host}"
+            ping_result = self.docker_service.exec_command(source_container, ping_cmd)
+            
+            if ping_result.get('success'):
+                response_time = (time.time() - start_time) * 1000
+                return {
+                    'success': True,
+                    'method': 'ping',
+                    'response_time': round(response_time, 2)
+                }
+            
+            # If ping fails, try HTTP connectivity test
+            start_time = time.time()
+            http_cmd = f"curl -s -o /dev/null -w '%{{http_code}}' --connect-timeout 5 http://{target_host}:{target_port}"
+            http_result = self.docker_service.exec_command(source_container, http_cmd)
+            
+            if http_result.get('success'):
+                response_time = (time.time() - start_time) * 1000
+                return {
+                    'success': True,
+                    'method': 'http',
+                    'response_time': round(response_time, 2)
+                }
+            
+            # If both fail, try telnet-style connection test
+            start_time = time.time()
+            nc_cmd = f"nc -z -w 3 {target_host} {target_port}"
+            nc_result = self.docker_service.exec_command(source_container, nc_cmd)
+            
+            if nc_result.get('success'):
+                response_time = (time.time() - start_time) * 1000
+                return {
+                    'success': True,
+                    'method': 'port_check',
+                    'response_time': round(response_time, 2)
+                }
+            
+            return {
+                'success': False,
+                'error': 'All connectivity tests failed',
+                'method': 'multiple'
+            }
+            
+        except Exception as e:
+            logger.error("Docker connectivity test failed", source=source_gateway, target=target_gateway, error=str(e))
+            return {
+                'success': False,
+                'error': str(e),
+                'method': 'docker_exec'
+            }
+    
+    def _get_configured_connections(self) -> List[Dict]:
+        """Get all configured gateway connections from env files"""
+        connections = []
+        
+        # Define the expected connections based on the configuration
+        expected_connections = [
+            # VIGVIS connects to all others
+            {'source': 'VIGVIS', 'target': 'CVSIGDT1'},
+            {'source': 'VIGVIS', 'target': 'CVSIGDT2'},
+            {'source': 'VIGVIS', 'target': 'VIGDS3'},
+            {'source': 'VIGVIS', 'target': 'VIGDS4'},
+            {'source': 'VIGVIS', 'target': 'VIGDEV'},
+            {'source': 'VIGVIS', 'target': 'VIGSVC'},
+            
+            # Development and Service connect to VIGVIS
+            {'source': 'VIGDEV', 'target': 'VIGVIS'},
+            {'source': 'VIGSVC', 'target': 'VIGVIS'},
+            
+            # Data collection gateways connect to Service
+            {'source': 'CVSIGDT1', 'target': 'VIGSVC'},
+            {'source': 'CVSIGDT2', 'target': 'VIGSVC'},
+            {'source': 'VIGDS3', 'target': 'VIGSVC'},
+            {'source': 'VIGDS4', 'target': 'VIGSVC'},
+        ]
+        
+        return expected_connections

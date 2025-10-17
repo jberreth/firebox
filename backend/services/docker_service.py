@@ -271,3 +271,72 @@ class DockerService:
             logger.warning("Failed to get trial info", port=port, error=str(e))
         
         return None
+    
+    def exec_command(self, container_name: str, command: str) -> Dict:
+        """Execute a command in a Docker container"""
+        if not self.is_available():
+            return {'success': False, 'error': 'Docker not available'}
+        
+        try:
+            # Get the container
+            container = self.client.containers.get(container_name)
+            
+            if container.status != 'running':
+                return {
+                    'success': False,
+                    'error': f'Container {container_name} is not running (status: {container.status})'
+                }
+            
+            # Execute the command
+            logger.info("Executing command in container", container=container_name, command=command)
+            result = container.exec_run(command, stdout=True, stderr=True)
+            
+            success = result.exit_code == 0
+            output = result.output.decode('utf-8') if result.output else ''
+            
+            logger.info("Command execution completed", 
+                       container=container_name, 
+                       exit_code=result.exit_code,
+                       success=success)
+            
+            return {
+                'success': success,
+                'exit_code': result.exit_code,
+                'output': output,
+                'command': command,
+                'container': container_name
+            }
+            
+        except docker.errors.NotFound:
+            logger.error("Container not found", container=container_name)
+            return {
+                'success': False,
+                'error': f'Container {container_name} not found'
+            }
+        except Exception as e:
+            logger.error("Failed to execute command in container", 
+                        container=container_name, 
+                        command=command, 
+                        error=str(e))
+            return {
+                'success': False,
+                'error': str(e)
+            }
+    
+    def get_container_logs(self, container_name: str, lines: int = 100) -> str:
+        """Get logs from a container"""
+        if not self.is_available():
+            return "Docker not available"
+        
+        try:
+            container = self.client.containers.get(container_name)
+            logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+            logger.info("Retrieved container logs", container=container_name, lines=lines)
+            return logs
+            
+        except docker.errors.NotFound:
+            logger.error("Container not found for logs", container=container_name)
+            return f"Container {container_name} not found"
+        except Exception as e:
+            logger.error("Failed to get container logs", container=container_name, error=str(e))
+            return f"Error retrieving logs: {str(e)}"

@@ -149,3 +149,50 @@ def get_gateway_logs(gateway_name):
     except Exception as e:
         logger.error("Failed to get gateway logs", gateway=gateway_name, error=str(e))
         return jsonify({'error': 'Failed to retrieve gateway logs'}), 500
+
+@gateways_bp.route('/ping', methods=['POST'])
+def ping_gateway():
+    """Test connectivity between gateways"""
+    try:
+        data = request.get_json()
+        source_gateway = data.get('source')
+        target_gateway = data.get('target')
+        
+        if not source_gateway or not target_gateway:
+            return jsonify({'error': 'Both source and target gateways are required'}), 400
+            
+        logger.info("Testing gateway connectivity", source=source_gateway, target=target_gateway)
+        
+        gateway_service = get_gateway_service()
+        result = gateway_service.ping_gateway(source_gateway, target_gateway)
+        
+        logger.info("Gateway ping completed", 
+                   source=source_gateway, 
+                   target=target_gateway, 
+                   success=result.get('success', False))
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error("Failed to ping gateway", error=str(e))
+        return jsonify({'error': 'Failed to ping gateway'}), 500
+
+@gateways_bp.route('/connectivity')
+def test_connectivity():
+    """Test connectivity between all configured gateway connections"""
+    try:
+        logger.info("Testing all gateway connections")
+        
+        gateway_service = get_gateway_service()
+        results = gateway_service.test_all_connections()
+        
+        logger.info("Gateway connectivity test completed", tested_connections=len(results))
+        return jsonify({
+            'results': results,
+            'total_tests': len(results),
+            'timestamp': request._environ.get('REQUEST_START_TIME', 0)
+        })
+        
+    except Exception as e:
+        logger.error("Failed to test connectivity", error=str(e))
+        return jsonify({'error': 'Failed to test connectivity'}), 500

@@ -13,6 +13,7 @@ import { useTrialStatus, useResetEmergencyTrials } from '../hooks/useTrials';
 import { useSystemHealth } from '../hooks/useSystem';
 import LoadingSpinner from '../components/Common/LoadingSpinner';
 import StatusBadge from '../components/Common/StatusBadge';
+import GatewayPingTool from '../components/Tools/GatewayPingTool';
 import { formatDateTime, formatPercentage } from '../utils/formatters';
 
 const Dashboard = () => {
@@ -280,6 +281,11 @@ const Dashboard = () => {
             </Text>
           )}
         </Box>
+      </Box>
+      
+      {/* Gateway Connectivity Tools */}
+      <Box sx={{ mt: 4 }}>
+        <GatewayPingTool />
       </Box>
     </Box>
   );

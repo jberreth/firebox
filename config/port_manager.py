@@ -19,52 +19,59 @@ class PortManager:
         self.config_dir = Path(config_dir)
         self.network_config_file = self.config_dir / "network.env"
         
-        # Port offset definitions
-        self.port_offsets = {
-            'http': 0,
-            'https': 1, 
-            'gan': 2,
-            'trace': 3,
-            'metrics': 4
-        }
+        # IP-based port allocation system
+        # Ports are calculated as BASE + IP_OCTET
         
-        # Gateway definitions
+        # Gateway definitions with IP-based port allocation
+        # Format: Gateway IP 10.1.32.XX where XX is the IP octet
         self.gateways = {
-            'VIGDEV': {'base_port': 8088, 'description': 'Development Gateway'},
-            'VIGVIS': {'base_port': 8188, 'description': 'Visualization Gateway'},
-            'VIGSVR': {'base_port': 8288, 'description': 'Server Gateway'},
-            'VIGSVC': {'base_port': 8388, 'description': 'Service Gateway'},
-            'CVSIGDT1': {'base_port': 8488, 'description': 'CVS Integration Gateway 1'},
-            'CVSIGDT2': {'base_port': 8588, 'description': 'CVS Integration Gateway 2'},
-            'VIGDS3': {'base_port': 8688, 'description': 'Datacenter Gateway 3'},
-            'VIGDS4': {'base_port': 8788, 'description': 'Datacenter Gateway 4'},
+            'CVSIGDT1': {'ip_octet': 51, 'ip': '10.1.32.51', 'description': 'CVS Integration Gateway 1'},
+            'CVSIGDT2': {'ip_octet': 52, 'ip': '10.1.32.52', 'description': 'CVS Integration Gateway 2'},
+            'VIGDS3': {'ip_octet': 53, 'ip': '10.1.32.53', 'description': 'Datacenter Gateway 3'},
+            'VIGDS4': {'ip_octet': 54, 'ip': '10.1.32.54', 'description': 'Datacenter Gateway 4'},
+            'VIGDEV': {'ip_octet': 70, 'ip': '10.1.32.70', 'description': 'Development Gateway'},
+            'VIGVIS': {'ip_octet': 71, 'ip': '10.1.32.71', 'description': 'Visualization Gateway'},
+            'VIGSVR': {'ip_octet': 72, 'ip': '10.1.32.72', 'description': 'Server Gateway'},
+            'VIGSVC': {'ip_octet': 73, 'ip': '10.1.32.73', 'description': 'Service Gateway'},
         }
         
-        # Infrastructure services
+        # Port base calculations based on IP octets
+        self.port_bases = {
+            'http': 8000,      # 8000 + IP_OCTET
+            'https': 8400,     # 8400 + IP_OCTET
+            'gan': 8600,       # 8600 + IP_OCTET
+            'trace': 10000,    # 10000 + IP_OCTET
+            'metrics': 11000,  # 11000 + IP_OCTET
+        }
+        
+        # Infrastructure services - avoiding gateway port ranges
         self.infrastructure = {
             'firebox_frontend': 3000,
             'firebox_backend': 5000,
             'prometheus': 9090,
             'grafana': 3001,
-            'cadvisor': 8081,  # Changed from 8080 to avoid conflict
+            'cadvisor': 9080,        # Moved to 9000 range
             'node_exporter': 9100,
             'traefik_http': 80,
             'traefik_https': 443,
-            'traefik_dashboard': 8080,
+            'traefik_dashboard': 9081,  # Moved to 9000 range
             'postgres': 5432,
-            'redis': 6379
+            'redis': 6379,
+            'portainer': 9000,       # Docker management
+            'portainer_https': 9443
         }
 
     def get_gateway_ports(self, gateway_name: str) -> Dict[str, int]:
-        """Get all port assignments for a specific gateway."""
+        """Get all port assignments for a specific gateway using IP-based calculation."""
         if gateway_name not in self.gateways:
             raise ValueError(f"Unknown gateway: {gateway_name}")
         
-        base_port = self.gateways[gateway_name]['base_port']
+        ip_octet = self.gateways[gateway_name]['ip_octet']
         ports = {}
         
-        for service, offset in self.port_offsets.items():
-            ports[service] = base_port + offset
+        # Calculate ports using IP octet + base port formulas
+        for service, base in self.port_bases.items():
+            ports[service] = base + ip_octet
             
         return ports
 
@@ -104,11 +111,11 @@ class PortManager:
         gateway_ports = self.get_gateway_ports(gateway_name)
         
         compose_ports = {
-            'http': f"{gateway_ports['http']}:8088",
-            'https': f"{gateway_ports['https']}:8043", 
-            'gan': f"{gateway_ports['gan']}:8060",
-            'trace': f"{gateway_ports['trace']}:8088/udp",  # For tracing
-            'metrics': f"{gateway_ports['metrics']}:9464"   # Prometheus metrics
+            'http': f"{gateway_ports['http']}:8088",      # External:Internal HTTP
+            'https': f"{gateway_ports['https']}:8043",    # External:Internal HTTPS
+            'gan': f"{gateway_ports['gan']}:8060",        # External:Internal GAN
+            'trace': f"{gateway_ports['trace']}:8088/udp", # UDP for tracing
+            'metrics': f"{gateway_ports['metrics']}:9464"  # Prometheus metrics
         }
         
         return compose_ports
@@ -176,13 +183,18 @@ class PortManager:
         print("🔥 Firebox Port Configuration Summary")
         print("=" * 50)
         
-        print("\n📡 Gateway Ports:")
+        print("\n📡 Gateway Ports (IP-based allocation):")
         for gateway_name in self.gateways:
             ports = self.get_gateway_ports(gateway_name)
-            desc = self.gateways[gateway_name]['description']
-            print(f"  {gateway_name} ({desc}):")
+            gateway_info = self.gateways[gateway_name]
+            desc = gateway_info['description']
+            ip = gateway_info['ip']
+            octet = gateway_info['ip_octet']
+            print(f"  {gateway_name} (IP: {ip}, Octet: {octet}):")
+            print(f"    {desc}")
             for service, port in ports.items():
                 print(f"    {service.capitalize()}: {port}")
+            print()
         
         print("\n🏗️ Infrastructure Ports:")
         for service, port in self.infrastructure.items():

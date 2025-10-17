@@ -6,9 +6,10 @@ import sys
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import requests
+import time
 
 app = Flask(__name__)
 CORS(app)
@@ -264,6 +265,129 @@ def reset_emergency_trials():
         } for g in emergency_gateways]
     })
 
+@app.route('/api/gateways/ping', methods=['POST'])
+def ping_gateway():
+    """Test connectivity between gateways"""
+    try:
+        data = request.get_json()
+        source_gateway = data.get('source')
+        target_gateway = data.get('target')
+        
+        if not source_gateway or not target_gateway:
+            return jsonify({'error': 'Both source and target gateways are required'}), 400
+        
+        # Find source and target gateway info
+        source_info = next((g for g in mock_gateways if g['name'] == source_gateway), None)
+        target_info = next((g for g in mock_gateways if g['name'] == target_gateway), None)
+        
+        if not source_info or not target_info:
+            return jsonify({
+                'success': False,
+                'error': 'Source or target gateway not found',
+                'source': source_gateway,
+                'target': target_gateway
+            })
+        
+        # Simulate ping test with varying results based on gateway status
+        success = target_info['status'] == 'healthy'
+        response_time = None
+        error = None
+        
+        if success:
+            # Simulate different response times
+            response_time = round(20 + (hash(f"{source_gateway}{target_gateway}") % 80), 1)
+        else:
+            error = f"Target gateway {target_gateway} is not healthy (status: {target_info['status']})"
+        
+        return jsonify({
+            'success': success,
+            'source': source_gateway,
+            'target': target_gateway,
+            'target_host': target_gateway.lower(),
+            'target_port': target_info['port'],
+            'response_time': response_time,
+            'method': 'mock_test',
+            'timestamp': time.time(),
+            'error': error
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'source': source_gateway,
+            'target': target_gateway
+        }), 500
+
+@app.route('/api/gateways/connectivity')
+def test_connectivity():
+    """Test connectivity between all configured gateway connections"""
+    try:
+        # Define connections based on our gateway configuration
+        connections = [
+            {'source': 'VIGVIS', 'target': 'CVSIGDT1'},
+            {'source': 'VIGVIS', 'target': 'CVSIGDT2'},
+            {'source': 'VIGVIS', 'target': 'VIGDS3'},
+            {'source': 'VIGVIS', 'target': 'VIGDS4'},
+            {'source': 'VIGVIS', 'target': 'VIGDEV'},
+            {'source': 'VIGVIS', 'target': 'VIGSVC'},
+            {'source': 'VIGDEV', 'target': 'VIGVIS'},
+            {'source': 'VIGSVC', 'target': 'VIGVIS'},
+            {'source': 'CVSIGDT1', 'target': 'VIGSVC'},
+            {'source': 'CVSIGDT2', 'target': 'VIGSVC'},
+            {'source': 'VIGDS3', 'target': 'VIGSVC'},
+            {'source': 'VIGDS4', 'target': 'VIGSVC'},
+        ]
+        
+        results = []
+        
+        for connection in connections:
+            source = connection['source']
+            target = connection['target']
+            
+            # Get gateway info
+            source_info = next((g for g in mock_gateways if g['name'] == source), None)
+            target_info = next((g for g in mock_gateways if g['name'] == target), None)
+            
+            if not source_info or not target_info:
+                results.append({
+                    'success': False,
+                    'source': source,
+                    'target': target,
+                    'error': 'Gateway not found'
+                })
+                continue
+            
+            # Test success based on both gateways being healthy
+            success = (source_info['status'] == 'healthy' and 
+                      target_info['status'] == 'healthy')
+            
+            result = {
+                'success': success,
+                'source': source,
+                'target': target,
+                'target_host': target.lower(),
+                'target_port': target_info['port'],
+                'method': 'mock_test',
+                'timestamp': time.time()
+            }
+            
+            if success:
+                result['response_time'] = round(15 + (hash(f"{source}{target}") % 50), 1)
+            else:
+                result['error'] = f"One or both gateways not healthy: {source_info['status']}, {target_info['status']}"
+            
+            results.append(result)
+        
+        return jsonify({
+            'results': results,
+            'total_tests': len(results),
+            'timestamp': time.time()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🔥 Firebox Backend Test Server Starting...")
     print("📡 Available endpoints:")
@@ -272,6 +396,8 @@ if __name__ == '__main__':
     print("   GET  /api/gateways/list")
     print("   POST /api/gateways/{name}/restart")
     print("   GET  /api/gateways/{name}/logs")
+    print("   POST /api/gateways/ping")
+    print("   GET  /api/gateways/connectivity")
     print("   GET  /api/trial/status")
     print("   POST /api/trial/reset/{name}")
     print("   POST /api/trial/reset/all")
