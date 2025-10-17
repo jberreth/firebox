@@ -1,5 +1,6 @@
-import { useQuery } from 'react-query';
-import fireboxApi from '../services/endpoints';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { gatewayApi } from '../services/endpoints';
+import gatewayService from '../services/gatewayService';
 import { REFRESH_INTERVALS } from '../utils/constants';
 
 /**
@@ -8,10 +9,9 @@ import { REFRESH_INTERVALS } from '../utils/constants';
 export const useGateways = () => {
   return useQuery(
     'gateways',
-    () => fireboxApi.gateways.getStatus(),
+    () => gatewayService.getAllGateways(),
     {
       refetchInterval: REFRESH_INTERVALS.GATEWAY_STATUS,
-      select: (response) => response.data,
       onError: (error) => {
         console.error('Failed to fetch gateways:', error);
       },
@@ -25,11 +25,10 @@ export const useGateways = () => {
 export const useGateway = (gatewayName) => {
   return useQuery(
     ['gateway', gatewayName],
-    () => fireboxApi.gateways.getSingleStatus(gatewayName),
+    () => gatewayService.getGateway(gatewayName),
     {
       enabled: !!gatewayName,
       refetchInterval: REFRESH_INTERVALS.GATEWAY_STATUS,
-      select: (response) => response.data,
       onError: (error) => {
         console.error(`Failed to fetch gateway ${gatewayName}:`, error);
       },
@@ -43,7 +42,7 @@ export const useGateway = (gatewayName) => {
 export const useGatewayList = () => {
   return useQuery(
     'gateway-list',
-    () => fireboxApi.gateways.list(),
+    () => gatewayApi.list(),
     {
       select: (response) => response.data,
       staleTime: 5 * 60 * 1000, // 5 minutes
@@ -55,36 +54,41 @@ export const useGatewayList = () => {
 };
 
 /**
- * Hook for fetching trial status
+ * Hook for restarting a gateway
  */
-export const useTrialStatus = (gatewayName) => {
-  return useQuery(
-    ['trial-status', gatewayName],
-    () => fireboxApi.trial.getStatus(gatewayName),
+export const useRestartGateway = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation(
+    (gatewayName) => gatewayService.restartGateway(gatewayName),
     {
-      enabled: !!gatewayName,
-      refetchInterval: REFRESH_INTERVALS.TRIAL_STATUS,
-      select: (response) => response.data,
-      onError: (error) => {
-        console.error(`Failed to fetch trial status for ${gatewayName}:`, error);
+      onSuccess: (data, gatewayName) => {
+        // Invalidate and refetch gateway data
+        queryClient.invalidateQueries('gateways');
+        queryClient.invalidateQueries(['gateway', gatewayName]);
+        console.log(`Gateway ${gatewayName} restart initiated`);
+      },
+      onError: (error, gatewayName) => {
+        console.error(`Failed to restart gateway ${gatewayName}:`, error);
       },
     }
   );
 };
 
 /**
- * Hook for fetching trial automation status
+ * Hook for fetching gateway logs
  */
-export const useTrialAutomation = () => {
+export const useGatewayLogs = (gatewayName, lines = 100) => {
   return useQuery(
-    'trial-automation',
-    () => fireboxApi.trial.getAutomationStatus(),
+    ['gateway-logs', gatewayName, lines],
+    () => gatewayService.getGatewayLogs(gatewayName, lines),
     {
-      refetchInterval: REFRESH_INTERVALS.TRIAL_STATUS,
-      select: (response) => response.data,
+      enabled: !!gatewayName,
+      staleTime: 30 * 1000, // 30 seconds
       onError: (error) => {
-        console.error('Failed to fetch trial automation status:', error);
+        console.error(`Failed to fetch logs for ${gatewayName}:`, error);
       },
     }
   );
 };
+

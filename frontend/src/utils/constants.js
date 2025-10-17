@@ -120,7 +120,7 @@ export const BREAKPOINTS = {
   XL: '1280px',
 };
 
-export default {
+const constants = {
   GATEWAY_STATUS,
   GATEWAY_STATUS_COLORS,
   TRIAL_STATUS,
@@ -136,3 +136,5 @@ export default {
   CHART_COLORS,
   BREAKPOINTS,
 };
+
+export default constants;

@@ -11,6 +11,7 @@ import { GATEWAY_STATUS, GATEWAY_STATUS_COLORS } from '../../utils/constants';
 
 const StatusBadge = ({ 
   status, 
+  variant,
   type = 'gateway', 
   size = 'medium',
   showIcon = true,
@@ -86,7 +87,7 @@ const StatusBadge = ({
   };
 
   const IconComponent = getStatusIcon(status, type);
-  const variant = getStatusVariant(status, type);
+  const badgeVariant = variant || getStatusVariant(status, type);
   
   // Format the status text
   const formatStatusText = (status) => {
@@ -98,7 +99,7 @@ const StatusBadge = ({
 
   return (
     <Label 
-      variant={variant} 
+      variant={badgeVariant} 
       size={size}
       sx={{ 
         display: 'inline-flex', 

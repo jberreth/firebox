@@ -100,8 +100,13 @@ def create_app(config_name=None):
         return jsonify({'error': 'Validation error', 'details': str(error)}), 400
     
     # Register blueprints
-    from routes import api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
+    from routes.health import health_bp
+    from routes.gateways import gateways_bp
+    from routes.trial import trial_bp
+    
+    app.register_blueprint(health_bp, url_prefix='/api/health')
+    app.register_blueprint(gateways_bp, url_prefix='/api/gateways')
+    app.register_blueprint(trial_bp, url_prefix='/api/trial')
     
     return app
 

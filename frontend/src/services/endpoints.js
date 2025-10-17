@@ -13,6 +13,9 @@ export const gatewayApi = {
   
   // List all available gateways
   list: () => api.get('/gateways/list'),
+  
+  // Get gateway logs
+  getLogs: (gatewayName, lines = 100) => api.get(`/gateways/${gatewayName}/logs?lines=${lines}`),
 };
 
 // System API endpoints
@@ -29,25 +32,33 @@ export const systemApi = {
 
 // Trial API endpoints
 export const trialApi = {
-  // Reset trial for a gateway
-  reset: (gatewayName, force = false) => 
+  // Reset trial for a specific gateway
+  resetSingle: (gatewayName) => api.post(`/trial/reset/${gatewayName}`),
+  
+  // Reset trials for all gateways
+  resetAll: () => api.post('/trial/reset/all'),
+  
+  // Reset trials for emergency gateways only
+  resetEmergency: () => api.post('/trial/reset/emergency'),
+  
+  // Legacy reset endpoint (supports both single and bulk)
+  reset: (gatewayName = 'all', force = false) => 
     api.post('/trial/reset', { gateway_name: gatewayName, force }),
   
-  // Get trial status for a gateway
-  getStatus: (gatewayName) => api.get(`/trial/status/${gatewayName}`),
+  // Get trial status summary for all gateways
+  getStatus: () => api.get('/trial/status'),
   
-  // Bulk reset trials
-  bulkReset: (gateways, force = false) => 
-    api.post('/trial/bulk-reset', { gateways, force }),
+  // Get trial service configuration
+  getConfig: () => api.get('/trial/config'),
   
-  // Get automation status
-  getAutomationStatus: () => api.get('/trial/automation/status'),
+  // Check trial reset requirements
+  checkRequirements: () => api.get('/trial/check'),
 };
 
 // Health check endpoint
 export const healthApi = {
   check: () => api.get('/health'),
-  metrics: () => api.get('/metrics'),
+  detailed: () => api.get('/health/detailed'),
 };
 
 // Combined API object for easy importing

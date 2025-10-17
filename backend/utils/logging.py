@@ -5,8 +5,12 @@ from datetime import datetime
 from flask import g, request
 import logging.config
 
-def setup_logging(log_level='INFO', log_format='json', log_dir='/app/logs'):
-    """Configure structured logging for the application"""
+def setup_logging(log_level='INFO', log_format='json', log_dir=None):
+    """Setup structured logging with file and console handlers"""
+    
+    # Use environment variable or default
+    if log_dir is None:
+        log_dir = os.environ.get('LOG_DIR', './logs')
     
     # Ensure log directory exists
     os.makedirs(log_dir, exist_ok=True)
