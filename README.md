@@ -1,4 +1,4 @@
-# 🔥 Firebox Dashboard v1.0
+# 🔥 Firebox v1.0
 
 A modern web interface for managing Ignition Sandbox environments with comprehensive gateway monitoring, trial period management, and automated reset capabilities.
 

@@ -1,4 +1,4 @@
-# 🚀 Deployment Guide - Firebox Dashboard v1.0
+# 🚀 Deployment Guide - Firebox v1.0
 
 Complete deployment instructions for development, staging, and production environments.
 

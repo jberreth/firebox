@@ -1,7 +1,7 @@
 {
   "name": "firebox-frontend",
   "version": "1.0.0",
-  "description": "Firebox Dashboard v1.0 - Modern web interface for Ignition Sandbox management",
+  "description": "Firebox v1.0 - Modern web interface for Ignition Sandbox management",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",

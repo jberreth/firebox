@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Key Components:
 - React 18 frontend with modern Primer UI components
 
-This is the first stable release of Firebox Dashboard, providing a complete web interface for managing Ignition Sandbox environments.
+This is the first stable release of Firebox, providing a complete web interface for managing Ignition Sandbox environments.
 
 ### ✨ Added
 

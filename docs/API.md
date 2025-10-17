@@ -1,6 +1,6 @@
 # 📡 Firebox API Documentation v1.0
 
-Complete API reference for the Firebox Dashboard backend services.
+Complete API reference for the Firebox backend services.
 
 ## Base Configuration
 

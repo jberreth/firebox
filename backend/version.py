@@ -1,10 +1,10 @@
 """
-Firebox Dashboard Version Information
+Firebox Version Information
 """
 
 __version__ = "1.0.0"
 __version_info__ = (1, 0, 0)
-__title__ = "Firebox Dashboard"
+__title__ = "Firebox"
 __description__ = "Modern web interface for Ignition Sandbox management"
 __author__ = "Firebox Development Team"
 __license__ = "MIT"
