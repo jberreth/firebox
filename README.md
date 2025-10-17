@@ -1,6 +1,6 @@
 # 🔥 Firebox Dashboard v1.0
 
-A modern, GitHub-style web interface for managing Ignition Sandbox environments with comprehensive gateway monitoring, trial period management, and automated reset capabilities.
+A modern web interface for managing Ignition Sandbox environments with comprehensive gateway monitoring, trial period management, and automated reset capabilities.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/status-stable-green.svg)
@@ -13,7 +13,7 @@ A modern, GitHub-style web interface for managing Ignition Sandbox environments 
 - ✅ **Trial Period Management**: Monitor trial periods with emergency reset capabilities  
 - ✅ **Container Management**: Restart gateway containers with one click
 - ✅ **Selenium Trial Reset**: Automated browser-based trial period resets
-- ✅ **Modern GitHub UI**: Primer React components with responsive design
+- ✅ **Modern Web Interface**: Primer React components with responsive design
 - ✅ **Comprehensive APIs**: RESTful endpoints with structured error handling
 - ✅ **Docker Integration**: Full Docker container inspection and management
 - ✅ **Structured Logging**: JSON-formatted logs with request tracing
@@ -80,7 +80,7 @@ npm start
 
 ### Frontend Stack  
 - **Framework**: React 18 with modern hooks and functional components
-- **UI Library**: GitHub Primer React for consistent GitHub-style interface
+- **UI Library**: GitHub Primer React for consistent modern interface
 - **State Management**: React Query for server state and caching
 - **Routing**: React Router v6 with nested routes
 - **HTTP Client**: Axios with interceptors and error handling

@@ -5,7 +5,7 @@ Firebox Dashboard Version Information
 __version__ = "1.0.0"
 __version_info__ = (1, 0, 0)
 __title__ = "Firebox Dashboard"
-__description__ = "Modern GitHub-style interface for Ignition Sandbox management"
+__description__ = "Modern web interface for Ignition Sandbox management"
 __author__ = "Firebox Development Team"
 __license__ = "MIT"
 __copyright__ = "2025 Firebox Development Team"
