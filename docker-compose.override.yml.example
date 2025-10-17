@@ -1,0 +1,28 @@
+version: '3.8'
+
+# Development overrides - uncomment for local development
+services:
+  backend:
+    volumes:
+      - ./backend:/app:rw
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    command: ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
+
+  frontend:
+    volumes:
+      - ./frontend/src:/app/src:rw
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "start"]
+
+  # Enable for development monitoring
+  # postgres:
+  #   ports:
+  #     - "5432:5432"
+  
+  # grafana:
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_INSTALL_PLUGINS=grafana-piechart-panel
