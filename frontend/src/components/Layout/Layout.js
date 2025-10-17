@@ -1,53 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Box } from '@primer/react';
-import Sidebar from './Sidebar';
-import Header from './Header';
+import TopNavigation from './TopNavigation';
 
 const Layout = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-    // Save preference to localStorage
-    localStorage.setItem('sidebarCollapsed', JSON.stringify(!sidebarCollapsed));
-  };
-
-  // Load sidebar state from localStorage on mount
-  React.useEffect(() => {
-    const saved = localStorage.getItem('sidebarCollapsed');
-    if (saved) {
-      setSidebarCollapsed(JSON.parse(saved));
-    }
-  }, []);
-
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bg: 'canvas.default' }}>
-      {/* Sidebar */}
-      <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
+    <Box sx={{ minHeight: '100vh', bg: 'canvas.subtle' }}>
+      {/* Top Navigation Bar */}
+      <Box 
+        sx={{
+          bg: 'canvas.default', // Light background for header
+          borderBottom: '1px solid',
+          borderColor: 'border.default',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}
+      >
+        <TopNavigation />
+      </Box>
       
-      {/* Main content area */}
-      <Box sx={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        ml: sidebarCollapsed ? '60px' : '280px',
-        transition: 'margin-left 0.2s ease-in-out'
-      }}>
-        {/* Header */}
-        <Header onToggleSidebar={toggleSidebar} />
-        
-        {/* Page content */}
-        <Box 
-          as="main" 
-          sx={{ 
-            flex: 1, 
-            p: 4,
-            bg: 'canvas.default',
-            overflow: 'auto'
-          }}
-        >
-          {children}
-        </Box>
+      {/* Main Content Area */}
+      <Box 
+        as="main" 
+        sx={{ 
+          maxWidth: '1280px',
+          mx: 'auto',
+          p: 4,
+          bg: 'canvas.subtle' // Darker background for main content
+        }}
+      >
+        {children}
       </Box>
     </Box>
   );

@@ -105,6 +105,10 @@ const StatusBadge = ({
         display: 'inline-flex', 
         alignItems: 'center', 
         gap: 1,
+        px: 2,  // Horizontal padding
+        py: 1,  // Vertical padding
+        minWidth: 'fit-content',
+        whiteSpace: 'nowrap',
         ...props.sx 
       }}
       {...props}

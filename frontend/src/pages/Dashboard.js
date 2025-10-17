@@ -162,14 +162,16 @@ const Dashboard = () => {
                     bg: 'canvas.subtle'
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
-                    <Box>
-                      <Heading sx={{ fontSize: 2, mb: 1 }}>{gateway.displayName || gateway.name}</Heading>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2, gap: 3 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Heading sx={{ fontSize: 2, mb: 1, pr: 2 }}>{gateway.displayName || gateway.name}</Heading>
                       <Text sx={{ fontSize: 1, color: 'fg.muted' }}>
                         Port {gateway.port} • {gateway.lastCheckFormatted}
                       </Text>
                     </Box>
-                    <StatusBadge status={gateway.status} variant={gateway.statusColor} />
+                    <Box sx={{ flexShrink: 0 }}>
+                      <StatusBadge status={gateway.status} variant={gateway.statusColor} />
+                    </Box>
                   </Box>
 
                   {gateway.trial && (
