@@ -1,0 +1,72 @@
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Test coverage
+coverage/
+.coverage
+.pytest_cache/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Secrets
+secrets/
+*.key
+*.pem
+*.crt
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temporary files
+tmp/
+temp/
