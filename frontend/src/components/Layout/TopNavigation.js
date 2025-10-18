@@ -33,27 +33,29 @@ const TopNavigation = () => {
         maxWidth: '1280px',
         mx: 'auto',
         px: 4,
-        py: 3
+        py: 3,
+        bg: '#161b22' // GitHub header background
       }}
     >
-      {/* Logo and Brand */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Octicon icon={FlameIcon} size={24} sx={{ color: 'danger.fg' }} />
+      {/* Logo and Brand - GitHub Style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        <Octicon icon={FlameIcon} size={32} sx={{ color: '#f85149' }} /> {/* GitHub red accent */}
         <Text 
           as="h1" 
           sx={{ 
-            fontSize: 3, 
+            fontSize: 4, 
             fontWeight: 'bold', 
-            color: 'fg.default',
-            m: 0
+            color: '#f0f6fc', // GitHub primary text white
+            m: 0,
+            letterSpacing: '-0.5px'
           }}
         >
           Firebox
         </Text>
       </Box>
 
-      {/* Horizontal Navigation Menu */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      {/* Horizontal Navigation Menu - GitHub Style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0 }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -61,41 +63,60 @@ const TopNavigation = () => {
               key={item.path}
               as={Link}
               to={item.path}
-              variant={isActive ? "primary" : "invisible"}
+              variant="invisible"
               size="medium"
               sx={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                px: 3,
-                py: 2,
+                px: 4,
+                py: 3,
                 textDecoration: 'none',
-                fontSize: 1,
+                fontSize: 2,
                 fontWeight: isActive ? 'semibold' : 'normal',
-                color: isActive ? 'btn.primary.text' : 'fg.default',
+                color: isActive ? '#f0f6fc' : '#7d8590', // GitHub text colors
+                borderBottom: isActive ? '2px solid #fd7e14' : '2px solid transparent', // GitHub orange accent
+                borderRadius: 0,
                 '&:hover': {
                   textDecoration: 'none',
-                  bg: isActive ? 'btn.primary.hoverBg' : 'btn.hoverBg'
+                  color: '#f0f6fc',
+                  bg: 'rgba(177, 186, 196, 0.12)' // GitHub hover background
+                },
+                '&:focus': {
+                  outline: '2px solid #1f6feb',
+                  outlineOffset: '-2px'
                 }
               }}
             >
-              <Octicon icon={item.icon} size={16} />
+              <Octicon 
+                icon={item.icon} 
+                size={16} 
+                sx={{ 
+                  color: isActive ? '#f0f6fc' : '#7d8590'
+                }} 
+              />
               {item.label}
             </Button>
           );
         })}
       </Box>
 
-      {/* User Actions */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      {/* User Actions - GitHub Style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
         {/* Emergency Reset Button */}
         <Button 
           variant="danger" 
           size="small"
           sx={{ 
-            fontSize: 0,
+            fontSize: 1,
             px: 3,
-            py: 1
+            py: 2,
+            bg: '#da3633', // GitHub danger red
+            color: '#f0f6fc',
+            border: '1px solid rgba(240, 246, 252, 0.1)',
+            '&:hover': {
+              bg: '#b91c1c'
+            }
           }}
         >
           Emergency Reset

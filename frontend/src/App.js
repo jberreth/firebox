@@ -12,7 +12,7 @@ import ErrorBoundary from './components/Common/ErrorBoundary';
 function App() {
   return (
     <ErrorBoundary>
-      <Box sx={{ minHeight: '100vh', bg: 'canvas.default' }}>
+      <Box sx={{ minHeight: '100vh', bg: '#0d1117' }}> {/* GitHub dark background */}
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />

@@ -4,13 +4,12 @@ import TopNavigation from './TopNavigation';
 
 const Layout = ({ children }) => {
   return (
-    <Box sx={{ minHeight: '100vh', bg: 'canvas.subtle' }}>
-      {/* Top Navigation Bar */}
+    <Box sx={{ minHeight: '100vh', bg: '#0d1117' }}> {/* GitHub dark background */}
+      {/* Top Navigation Bar - GitHub Header Style */}
       <Box 
         sx={{
-          bg: 'canvas.default', // Light background for header
-          borderBottom: '1px solid',
-          borderColor: 'border.default',
+          bg: '#161b22', // GitHub header background
+          borderBottom: '1px solid #21262d', // GitHub border color
           position: 'sticky',
           top: 0,
           zIndex: 100
@@ -26,7 +25,7 @@ const Layout = ({ children }) => {
           maxWidth: '1280px',
           mx: 'auto',
           p: 4,
-          bg: 'canvas.subtle' // Darker background for main content
+          bg: '#0d1117' // GitHub main background
         }}
       >
         {children}

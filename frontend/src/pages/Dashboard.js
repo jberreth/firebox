@@ -72,8 +72,8 @@ const Dashboard = () => {
       {/* Page Header */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Heading sx={{ fontSize: 5, mb: 1 }}>Dashboard</Heading>
-          <Text sx={{ color: 'fg.muted', fontSize: 2 }}>
+          <Heading sx={{ fontSize: 5, mb: 1, color: '#f0f6fc' }}>Dashboard</Heading> {/* GitHub text white */}
+          <Text sx={{ color: '#7d8590', fontSize: 2 }}> {/* GitHub muted text */}
             Overview of your Ignition Sandbox environment
           </Text>
         </Box>
@@ -157,10 +157,10 @@ const Dashboard = () => {
                   key={gateway.name}
                   sx={{
                     border: '1px solid',
-                    borderColor: 'border.default',
+                    borderColor: '#21262d', // GitHub border color
                     borderRadius: 2,
                     p: 3,
-                    bg: 'canvas.subtle'
+                    bg: '#161b22' // GitHub card background
                   }}
                 >
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2, gap: 3 }}>
@@ -227,10 +227,10 @@ const Dashboard = () => {
             <Box
               sx={{
                 border: '1px solid',
-                borderColor: 'border.default',
+                borderColor: '#21262d', // GitHub border color
                 borderRadius: 2,
                 p: 3,
-                bg: 'canvas.subtle'
+                bg: '#161b22' // GitHub card background
               }}
             >
               <Box sx={{ mb: 3 }}>
