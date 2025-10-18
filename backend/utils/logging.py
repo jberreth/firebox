@@ -12,8 +12,18 @@ def setup_logging(log_level='INFO', log_format='json', log_dir=None):
     if log_dir is None:
         log_dir = os.environ.get('LOG_DIR', './logs')
     
-    # Ensure log directory exists
-    os.makedirs(log_dir, exist_ok=True)
+    # Create logs directory if it doesn't exist
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        # Test write access
+        test_file = os.path.join(log_dir, 'test_write.tmp')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except (OSError, PermissionError):
+        # Fall back to console only if we can't write to logs
+        print(f"Warning: Cannot write to log directory {log_dir}, falling back to console logging only")
+        log_dir = None
     
     # Configure structlog
     structlog.configure(
@@ -35,24 +45,19 @@ def setup_logging(log_level='INFO', log_format='json', log_dir=None):
     )
     
     # Standard logging configuration
-    logging_config = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters': {
-            'json': {
-                'format': '%(asctime)s %(name)s %(levelname)s %(message)s'
-            },
-            'console': {
-                'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            }
-        },
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'level': log_level,
-                'formatter': 'console' if log_format != 'json' else 'json',
-                'stream': sys.stdout
-            },
+    # Configure handlers based on available log directory
+    handlers = {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': log_level,
+            'formatter': 'console' if log_format != 'json' else 'json',
+            'stream': sys.stdout
+        }
+    }
+    
+    # Only add file handlers if we can write to log directory
+    if log_dir:
+        handlers.update({
             'file': {
                 'class': 'logging.FileHandler',
                 'level': log_level,
@@ -67,15 +72,33 @@ def setup_logging(log_level='INFO', log_format='json', log_dir=None):
                 'filename': os.path.join(log_dir, 'error.log'),
                 'mode': 'a'
             }
+        })
+        root_handlers = ['console', 'file', 'error_file']
+        werkzeug_handlers = ['console', 'file']
+    else:
+        root_handlers = ['console']
+        werkzeug_handlers = ['console']
+
+    logging_config = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'json': {
+                'format': '%(asctime)s %(name)s %(levelname)s %(message)s'
+            },
+            'console': {
+                'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            }
         },
+        'handlers': handlers,
         'loggers': {
             '': {
-                'handlers': ['console', 'file', 'error_file'],
+                'handlers': root_handlers,
                 'level': log_level,
                 'propagate': False
             },
             'werkzeug': {
-                'handlers': ['console', 'file'],
+                'handlers': werkzeug_handlers,
                 'level': 'WARNING',
                 'propagate': False
             }

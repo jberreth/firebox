@@ -1,16 +1,30 @@
-version: '3.8'
-
 networks:
   firebox:
     driver: bridge
   monitoring:
     driver: bridge
+  gateway:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.1.32.0/24
 
 volumes:
   prometheus_data:
   grafana_data:
   postgres_data:
   traefik_data:
+  # Gateway data volumes
+  vigvis_data:
+  cvsigdt1_data:
+  cvsigdt2_data:
+  vigds3_data:
+  vigds4_data:
+  vigdev_data:
+  vigsvc_data:
+  vigsvr_data:
+  # Gateway backup volumes
+  gateway_backups:
 
 services:
   # Reverse Proxy and TLS Management
@@ -31,11 +45,6 @@ services:
     networks:
       - firebox
       - monitoring
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.${HOST_IP}.nip.io`)"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.routers.dashboard.service=api@internal"
     logging:
       driver: "json-file"
       options:
@@ -73,6 +82,8 @@ services:
       dockerfile: Dockerfile
     container_name: firebox-backend
     restart: unless-stopped
+    ports:
+      - "5000:5000"  # Direct port mapping for testing
     environment:
       - FLASK_ENV=production
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -95,7 +106,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.${HOST_IP}.nip.io`)"
-      - "traefik.http.routers.api.tls=true"
       - "traefik.http.services.api.loadbalancer.server.port=5000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -115,16 +125,17 @@ services:
       dockerfile: Dockerfile
     container_name: firebox-frontend
     restart: unless-stopped
+    ports:
+      - "3000:80"  # Direct port mapping for testing
     environment:
-      - REACT_APP_API_URL=https://api.${HOST_IP}.nip.io
+      - REACT_APP_API_URL=http://192.168.1.38:5000
       - REACT_APP_GRAFANA_URL=https://grafana.${HOST_IP}.nip.io
     networks:
       - firebox
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`dashboard.${HOST_IP}.nip.io`)"
-      - "traefik.http.routers.dashboard.tls=true"
-      - "traefik.http.services.dashboard.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend-dashboard.rule=Host(`dashboard.${HOST_IP}.nip.io`)"
+      - "traefik.http.services.frontend-dashboard.loadbalancer.server.port=80"
     logging:
       driver: "json-file"
       options:
@@ -254,6 +265,346 @@ services:
       - firebox
     depends_on:
       - backend
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =============================================================================
+  # IGNITION GATEWAY STACK
+  # =============================================================================
+
+  # VIGVIS - Visualization Gateway (Hub)
+  vigvis:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigvis
+    hostname: vigvis
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGVIS.env
+    ports:
+      - "8071:8088"   # HTTP
+      - "8471:8043"   # HTTPS  
+      - "8671:8060"   # GAN
+    volumes:
+      - vigvis_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.71
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigvis.rule=Host(`vigvis.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigvis.tls=true"
+      - "traefik.http.services.vigvis.loadbalancer.server.port=8088"
+      - "gateway.name=VIGVIS"
+      - "gateway.type=visualization"
+      - "gateway.role=hub"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # CVSIGDT1 - CVS Integration Gateway 1
+  cvsigdt1:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-cvsigdt1
+    hostname: cvsigdt1
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/CVSIGDT1.env
+    ports:
+      - "8051:8088"   # HTTP
+      - "8451:8043"   # HTTPS
+      - "8651:8060"   # GAN
+    volumes:
+      - cvsigdt1_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.51
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cvsigdt1.rule=Host(`cvsigdt1.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.cvsigdt1.tls=true"
+      - "traefik.http.services.cvsigdt1.loadbalancer.server.port=8088"
+      - "gateway.name=CVSIGDT1"
+      - "gateway.type=integration"
+      - "gateway.role=data_collection"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # CVSIGDT2 - CVS Integration Gateway 2
+  cvsigdt2:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-cvsigdt2
+    hostname: cvsigdt2
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/CVSIGDT2.env
+    ports:
+      - "8052:8088"   # HTTP
+      - "8452:8043"   # HTTPS
+      - "8652:8060"   # GAN
+    volumes:
+      - cvsigdt2_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.52
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cvsigdt2.rule=Host(`cvsigdt2.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.cvsigdt2.tls=true"
+      - "traefik.http.services.cvsigdt2.loadbalancer.server.port=8088"
+      - "gateway.name=CVSIGDT2"
+      - "gateway.type=integration"
+      - "gateway.role=data_collection"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # VIGDS3 - Datacenter Gateway 3
+  vigds3:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigds3
+    hostname: vigds3
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGDS3.env
+    ports:
+      - "8053:8088"   # HTTP
+      - "8453:8043"   # HTTPS
+      - "8653:8060"   # GAN
+    volumes:
+      - vigds3_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.53
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigds3.rule=Host(`vigds3.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigds3.tls=true"
+      - "traefik.http.services.vigds3.loadbalancer.server.port=8088"
+      - "gateway.name=VIGDS3"
+      - "gateway.type=datacenter"
+      - "gateway.role=monitoring"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # VIGDS4 - Datacenter Gateway 4
+  vigds4:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigds4
+    hostname: vigds4
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGDS4.env
+    ports:
+      - "8054:8088"   # HTTP
+      - "8454:8043"   # HTTPS
+      - "8654:8060"   # GAN
+    volumes:
+      - vigds4_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.54
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigds4.rule=Host(`vigds4.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigds4.tls=true"
+      - "traefik.http.services.vigds4.loadbalancer.server.port=8088"
+      - "gateway.name=VIGDS4"
+      - "gateway.type=datacenter"
+      - "gateway.role=monitoring"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # VIGDEV - Development Gateway
+  vigdev:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigdev
+    hostname: vigdev
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGDEV.env
+    ports:
+      - "8070:8088"   # HTTP
+      - "8470:8043"   # HTTPS
+      - "8670:8060"   # GAN
+    volumes:
+      - vigdev_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.70
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigdev.rule=Host(`vigdev.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigdev.tls=true"
+      - "traefik.http.services.vigdev.loadbalancer.server.port=8088"
+      - "gateway.name=VIGDEV"
+      - "gateway.type=development"
+      - "gateway.role=testing"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # VIGSVC - Service Gateway
+  vigsvc:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigsvc
+    hostname: vigsvc
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGSVC.env
+    ports:
+      - "8073:8088"   # HTTP
+      - "8473:8043"   # HTTPS
+      - "8673:8060"   # GAN
+    volumes:
+      - vigsvc_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.73
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigsvc.rule=Host(`vigsvc.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigsvc.tls=true"
+      - "traefik.http.services.vigsvc.loadbalancer.server.port=8088"
+      - "gateway.name=VIGSVC"
+      - "gateway.type=service"
+      - "gateway.role=coordination"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # VIGSVR - Server Gateway
+  vigsvr:
+    image: inductiveautomation/ignition:8.1.44
+    container_name: firebox-vigsvr
+    hostname: vigsvr
+    restart: unless-stopped
+    env_file:
+      - ./config/common.env
+      - ./config/network.env
+      - ./config/gateways/VIGSVR.env
+    ports:
+      - "8072:8088"   # HTTP
+      - "8472:8043"   # HTTPS
+      - "8672:8060"   # GAN
+    volumes:
+      - vigsvr_data:/usr/local/bin/ignition/data
+      - gateway_backups:/backups
+      - ./config/gateways:/gateway-config:ro
+    networks:
+      firebox:
+      gateway:
+        ipv4_address: 10.1.32.72
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vigsvr.rule=Host(`vigsvr.${HOST_IP}.nip.io`)"
+      - "traefik.http.routers.vigsvr.tls=true"
+      - "traefik.http.services.vigsvr.loadbalancer.server.port=8088"
+      - "gateway.name=VIGSVR"
+      - "gateway.type=server"
+      - "gateway.role=backend"
     logging:
       driver: "json-file"
       options:

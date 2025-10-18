@@ -12,11 +12,6 @@ accessLog:
 entryPoints:
   web:
     address: ":80"
-    http:
-      redirections:
-        entrypoint:
-          to: websecure
-          scheme: https
   websecure:
     address: ":443"
 
@@ -24,7 +19,7 @@ providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
-    network: firebox
+    network: firebox_firebox
   file:
     directory: /etc/traefik/dynamic
     watch: true
@@ -40,6 +35,7 @@ certificatesResolvers:
 api:
   dashboard: true
   debug: true
+  insecure: true
 
 metrics:
   prometheus:
